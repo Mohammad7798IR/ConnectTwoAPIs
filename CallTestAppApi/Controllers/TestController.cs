@@ -2,6 +2,7 @@
 using CallTestAppApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using RestSharp;
 using System.Net.Http.Headers;
 
 
@@ -12,65 +13,56 @@ namespace CallTestAppApi.Controllers
     public class TestController : ControllerBase
     {
 
-        private const string PostAddress = "http://localhost:5256/api/User/SignUp";
-        private const string GetAddress = "http://localhost:5256/api/User/GetAllUsers";
+        #region Fields
+
+        private const string PostAddress = "http://localhost:56234/api/User/SignUp";
+        private const string GetAddress = "http://localhost:56234/api/User/GetAll";
+
+
+
+        #endregion
+
+        #region Method [s]
 
         [HttpPost]
         [Route("TestPost")]
         public async Task<IActionResult> Post(SignUpDTO signUpDTO)
         {
-            using (var client = new HttpClient())
-            {
-                //Passing service base url  
-                client.BaseAddress = new Uri(PostAddress);
+            var clientRest = new RestClient(PostAddress);
 
-                client.DefaultRequestHeaders.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            var clientRequest = new RestRequest().AddJsonBody(signUpDTO);
 
-                //Sending request to find web api REST service resource GetDepartments using HttpClient  
-                HttpResponseMessage Res = await client.PostAsync(PostAddress, JsonContent.Create(signUpDTO));
+            clientRequest.AddHeader("Accept", "application/json");
+            clientRequest.AddHeader("Id", Guid.NewGuid().ToString());
 
-                //Checking the response is successful or not which is sent using HttpClient  
-                if (Res.IsSuccessStatusCode)
-                {
-                    return Ok(Res.Content);
 
-                }
+            var response = await clientRest.PostAsync(clientRequest);
 
-            }
-            return Ok();
+            return Ok(response);
+
         }
 
         [HttpGet]
         [Route("TestGet")]
         public async Task<IActionResult> Get()
         {
-            using (var client = new HttpClient())
-            {
 
-                client.BaseAddress = new Uri(PostAddress);
+            var clientRest = new RestClient(GetAddress);
 
-                client.DefaultRequestHeaders.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            var clientRequest = new RestRequest();
 
-
-                HttpResponseMessage Res = await client.GetAsync(GetAddress);
+            clientRequest.AddHeader("Accept", "application/json");
+            clientRequest.AddHeader("Id", Guid.NewGuid().ToString());
 
 
-                if (Res.IsSuccessStatusCode)
-                {
+            var response = await clientRest.GetAsync<List<ApplicationUser>>(clientRequest);
 
-                    var stream = await Res.Content.ReadAsStringAsync();
-          
-                    var apiResponse = JsonConvert.DeserializeObject<List<ApplicationUser>>(stream);
 
-                    return Ok(apiResponse);
-
-                }
-
-            }
-            return Ok();
+            return Ok(response);
 
         }
+
+        #endregion
+
     }
 }
